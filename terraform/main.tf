@@ -42,36 +42,55 @@ resource "aws_internet_gateway" "devops_hilltop_igw" {
   }
 }
 
-# Public Subnets
+# Public Subnets (Web Tier - LoadBalancer)
 resource "aws_subnet" "public_subnet" {
-  count = 2
+  count = 3
 
   vpc_id                  = aws_vpc.devops_hilltop_vpc.id
   cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index)
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  availability_zone       = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
   map_public_ip_on_launch = true
 
   tags = {
     Name                                        = "${var.cluster_name}-public-subnet-${count.index + 1}"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                    = "1"
+    "Tier"                                      = "public"
     Environment                                 = var.environment
     Project                                     = "devops-hilltop"
   }
 }
 
-# Private Subnets
+# Private Subnets (Application Tier)
 resource "aws_subnet" "private_subnet" {
-  count = 2
+  count = 3
 
   vpc_id            = aws_vpc.devops_hilltop_vpc.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 2)
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 3)
+  availability_zone = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
 
   tags = {
     Name                                        = "${var.cluster_name}-private-subnet-${count.index + 1}"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"           = "1"
+    "Tier"                                      = "application"
+    Environment                                 = var.environment
+    Project                                     = "devops-hilltop"
+  }
+}
+
+# Database Subnets (Data Tier)
+resource "aws_subnet" "database_subnet" {
+  count = 3
+
+  vpc_id            = aws_vpc.devops_hilltop_vpc.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index + 6)
+  availability_zone = data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)]
+
+  tags = {
+    Name                                        = "${var.cluster_name}-database-subnet-${count.index + 1}"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "Tier"                                      = "database"
     Environment                                 = var.environment
     Project                                     = "devops-hilltop"
   }
@@ -79,7 +98,7 @@ resource "aws_subnet" "private_subnet" {
 
 # NAT Gateway Elastic IPs
 resource "aws_eip" "nat_gateway_eip" {
-  count = 2
+  count = 3
 
   domain = "vpc"
   depends_on = [aws_internet_gateway.devops_hilltop_igw]
@@ -93,7 +112,7 @@ resource "aws_eip" "nat_gateway_eip" {
 
 # NAT Gateways
 resource "aws_nat_gateway" "nat_gateway" {
-  count = 2
+  count = 3
 
   allocation_id = aws_eip.nat_gateway_eip[count.index].id
   subnet_id     = aws_subnet.public_subnet[count.index].id
@@ -105,6 +124,18 @@ resource "aws_nat_gateway" "nat_gateway" {
   }
 
   depends_on = [aws_internet_gateway.devops_hilltop_igw]
+}
+
+# Database Subnet Group for RDS (Data Tier)
+resource "aws_db_subnet_group" "database_subnet_group" {
+  name       = "${var.cluster_name}-database-subnet-group"
+  subnet_ids = aws_subnet.database_subnet[*].id
+
+  tags = {
+    Name        = "${var.cluster_name}-database-subnet-group"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
 }
 
 # Public Route Table
@@ -123,9 +154,9 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
-# Private Route Tables
+# Private Route Tables (Application Tier)
 resource "aws_route_table" "private_rt" {
-  count = 2
+  count = 3
 
   vpc_id = aws_vpc.devops_hilltop_vpc.id
 
@@ -141,19 +172,39 @@ resource "aws_route_table" "private_rt" {
   }
 }
 
+# Database Route Tables (Data Tier)
+resource "aws_route_table" "database_rt" {
+  count = 3
+
+  vpc_id = aws_vpc.devops_hilltop_vpc.id
+
+  tags = {
+    Name        = "${var.cluster_name}-database-rt-${count.index + 1}"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
+}
+
 # Route Table Associations
 resource "aws_route_table_association" "public_rta" {
-  count = 2
+  count = 3
 
   subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
 
 resource "aws_route_table_association" "private_rta" {
-  count = 2
+  count = 3
 
   subnet_id      = aws_subnet.private_subnet[count.index].id
   route_table_id = aws_route_table.private_rt[count.index].id
+}
+
+resource "aws_route_table_association" "database_rta" {
+  count = 3
+
+  subnet_id      = aws_subnet.database_subnet[count.index].id
+  route_table_id = aws_route_table.database_rt[count.index].id
 }
 
 # Security Group for EKS Cluster
@@ -201,10 +252,17 @@ resource "aws_security_group" "eks_nodes_sg" {
     security_groups = [aws_security_group.eks_cluster_sg.id]
   }
 
-  # NodePort access
+  # LoadBalancer access
   ingress {
-    from_port   = 30000
-    to_port     = 32767
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -397,6 +455,249 @@ resource "aws_eks_addon" "kube_proxy" {
 
   tags = {
     Name        = "${var.cluster_name}-kube-proxy"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
+}
+
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name = aws_eks_cluster.devops_hilltop.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  tags = {
+    Name        = "${var.cluster_name}-ebs-csi-driver"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
+}
+
+# IAM Role for AWS Load Balancer Controller
+resource "aws_iam_role" "aws_load_balancer_controller" {
+  name = "${var.cluster_name}-aws-load-balancer-controller"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud": "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.cluster_name}-aws-load-balancer-controller"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
+}
+
+# IAM Policy for AWS Load Balancer Controller
+resource "aws_iam_policy" "aws_load_balancer_controller" {
+  name = "${var.cluster_name}-AWSLoadBalancerControllerIAMPolicy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateServiceLinkedRole",
+          "ec2:DescribeAccountAttributes",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeInternetGateways",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeInstances",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeTags",
+          "ec2:GetCoipPoolUsage",
+          "ec2:DescribeCoipPools",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeListenerCertificates",
+          "elasticloadbalancing:DescribeSSLPolicies",
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:DescribeUserPoolClient",
+          "acm:ListCertificates",
+          "acm:DescribeCertificate",
+          "iam:ListServerCertificates",
+          "iam:GetServerCertificate",
+          "waf-regional:GetWebACL",
+          "waf-regional:GetWebACLForResource",
+          "waf-regional:AssociateWebACL",
+          "waf-regional:DisassociateWebACL",
+          "wafv2:GetWebACL",
+          "wafv2:GetWebACLForResource",
+          "wafv2:AssociateWebACL",
+          "wafv2:DisassociateWebACL",
+          "shield:DescribeProtection",
+          "shield:GetSubscriptionState",
+          "shield:DescribeSubscription",
+          "shield:ListProtections"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateSecurityGroup",
+          "ec2:CreateTags"
+        ]
+        Resource = "arn:aws:ec2:*:*:security-group/*"
+        Condition = {
+          StringEquals = {
+            "ec2:CreateAction" = "CreateSecurityGroup"
+          }
+          Null = {
+            "aws:RequestTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateTargetGroup"
+        ]
+        Resource = "*"
+        Condition = {
+          Null = {
+            "aws:RequestTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:CreateRule",
+          "elasticloadbalancing:DeleteRule"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:RemoveTags"
+        ]
+        Resource = [
+          "arn:aws:elasticloadbalancing:*:*:targetgroup/*/*",
+          "arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*",
+          "arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*"
+        ]
+        Condition = {
+          Null = {
+            "aws:RequestTag/elbv2.k8s.aws/cluster" = "true"
+            "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:SetIpAddressType",
+          "elasticloadbalancing:SetSecurityGroups",
+          "elasticloadbalancing:SetSubnets",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:ModifyTargetGroupAttributes",
+          "elasticloadbalancing:DeleteTargetGroup"
+        ]
+        Resource = "*"
+        Condition = {
+          Null = {
+            "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets"
+        ]
+        Resource = "arn:aws:elasticloadbalancing:*:*:targetgroup/*/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateTags"
+        ]
+        Resource = "arn:aws:ec2:*:*:security-group/*"
+        Condition = {
+          Null = {
+            "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
+            "aws:RequestTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:DeleteSecurityGroup"
+        ]
+        Resource = "*"
+        Condition = {
+          Null = {
+            "aws:ResourceTag/elbv2.k8s.aws/cluster" = "false"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.cluster_name}-AWSLoadBalancerControllerIAMPolicy"
+    Environment = var.environment
+    Project     = "devops-hilltop"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
+  policy_arn = aws_iam_policy.aws_load_balancer_controller.arn
+  role       = aws_iam_role.aws_load_balancer_controller.name
+}
+
+# OIDC Provider
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.devops_hilltop.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.devops_hilltop.identity[0].oidc[0].issuer
+
+  tags = {
+    Name        = "${var.cluster_name}-eks-irsa"
     Environment = var.environment
     Project     = "devops-hilltop"
   }

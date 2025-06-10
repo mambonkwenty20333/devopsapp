@@ -6,12 +6,15 @@ metadata:
   labels:
     app: devops-platform
     component: web
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "devops-hilltop-cluster-public-subnet-1,devops-hilltop-cluster-public-subnet-2,devops-hilltop-cluster-public-subnet-3"
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
   - port: 80
     targetPort: 5000
-    nodePort: 30080
     protocol: TCP
     name: http
   selector:
