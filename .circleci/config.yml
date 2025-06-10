@@ -56,8 +56,6 @@ jobs:
     executor: aws-executor
     steps:
       - checkout
-      - aws-cli/setup:
-          profile-name: default
       - run:
           name: Configure kubectl for EKS
           command: |
@@ -85,8 +83,6 @@ jobs:
     executor: aws-executor
     steps:
       - checkout
-      - aws-cli/setup:
-          profile-name: default
       - run:
           name: Configure kubectl for EKS
           command: |
