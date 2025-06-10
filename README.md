@@ -243,30 +243,33 @@ docker-compose down
 
 ## 🔄 CI/CD Pipeline
 
-The project includes a comprehensive CircleCI pipeline with the following stages:
+The CircleCI pipeline automatically handles building, testing, and deploying your application to AWS EKS:
 
 ### Pipeline Stages
 
 1. **Test**: Runs linting and unit tests
 2. **Security Scan**: Vulnerability scanning with Trivy
-3. **Build & Push**: Builds Docker image and pushes to registry
-4. **Deploy Staging**: Automatic deployment to staging environment
-5. **Deploy Production**: Manual approval required for production deployment
+3. **Build & Push**: Builds Docker image and pushes to Docker Hub
+4. **Deploy Staging**: Automatic deployment to EKS (develop branch)
+5. **Deploy Production**: Manual approval required (main branch)
 
-### Setup Instructions
+### Branch Strategy
 
-1. **Configure CircleCI environment variables:**
-   ```
-   DOCKER_USERNAME=your_docker_username
-   DOCKER_PASSWORD=your_docker_password
-   KUBE_CONFIG_DATA=base64_encoded_kubeconfig
-   POSTGRES_PASSWORD_STAGING=staging_db_password
-   POSTGRES_PASSWORD_PROD=production_db_password
-   ```
+- **develop branch**: Automatically deploys to staging environment
+- **main branch**: Requires manual approval before production deployment
+- Each deployment uses the git commit SHA as the Docker image tag for traceability
 
-2. **Trigger deployment:**
-   - Push to `develop` branch → deploys to staging
-   - Push to `main` branch → requires approval for production
+### Accessing Your Application
+
+After deployment, access your application using:
+```bash
+# Get node external IP and NodePort
+kubectl get nodes -o wide
+kubectl get service devops-hilltop-service -n devops-hilltop
+
+# Application will be available at:
+# http://<NODE_EXTERNAL_IP>:30080
+```
 
 ## 🏗 Project Structure
 
@@ -341,47 +344,47 @@ devops-hilltop/
 - Non-root container execution
 - Read-only root filesystem
 
-## 🚀 Deployment to AWS EKS
+## 🔧 Required Environment Variables for CircleCI
 
-### Prerequisites
-- AWS CLI configured
-- eksctl installed
-- kubectl installed
-- Helm 3.x installed
+To set up automated deployment, you'll need to configure these environment variables in your CircleCI project settings:
 
-### EKS Cluster Setup
+### Docker Hub Configuration
+```
+DOCKER_USERNAME=your_dockerhub_username
+DOCKER_PASSWORD=your_dockerhub_access_token
+```
 
-1. **Create EKS cluster**
-   ```bash
-   eksctl create cluster \
-     --name devops-hilltop-cluster \
-     --region us-west-2 \
-     --nodegroup-name workers \
-     --node-type m5.large \
-     --nodes 3 \
-     --nodes-min 2 \
-     --nodes-max 5 \
-     --managed
-   ```
+### AWS Configuration
+```
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_DEFAULT_REGION=us-west-2
+EKS_CLUSTER_NAME=devops-hilltop-cluster
+```
 
-2. **Install ingress controller**
-   ```bash
-   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/aws/deploy.yaml
-   ```
+### How to Get These Values
 
-3. **Install cert-manager (for SSL)**
-   ```bash
-   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
-   ```
+**Docker Hub Access Token:**
+1. Login to Docker Hub
+2. Go to Account Settings → Security
+3. Create a new Access Token
+4. Use this token as DOCKER_PASSWORD
 
-4. **Deploy application**
-   ```bash
-   helm install devops-hilltop ./helm/devops-hilltop \
-     --namespace devops-hilltop \
-     --create-namespace \
-     --set ingress.enabled=true \
-     --set ingress.hosts[0].host=devops-hilltop.yourdomain.com
-   ```
+**AWS Credentials:**
+1. Go to AWS IAM Console
+2. Create a new user with programmatic access
+3. Attach policies: AmazonEKSClusterPolicy, AmazonEKSWorkerNodePolicy, AmazonEC2ContainerRegistryPowerUser
+4. Save the Access Key ID and Secret Access Key
+
+## 🚀 Quick Deployment Guide
+
+### Option 1: Automated Deployment via CircleCI
+1. Configure the environment variables above
+2. Push your code to `develop` branch for staging deployment
+3. Push to `main` branch and approve for production deployment
+
+### Option 2: Manual Deployment
+Use the kubectl commands in the EKS deployment section above
 
 ## 📚 API Documentation
 
