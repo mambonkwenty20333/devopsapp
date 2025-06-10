@@ -311,6 +311,58 @@ devops-hilltop/
 - `npm run db:push` - Push database schema changes
 - `npm run db:studio` - Open Drizzle Studio (database GUI)
 
+## 📊 Database Verification
+
+After submitting data through the application, verify it was properly stored in PostgreSQL:
+
+```sql
+-- Connect to database
+psql $DATABASE_URL
+
+-- Check all categories
+SELECT id, name, description, created_at FROM categories ORDER BY id;
+
+-- Check all resources with their categories
+SELECT 
+    r.id,
+    r.title,
+    r.description,
+    c.name as category_name,
+    r.url,
+    r.created_at
+FROM resources r 
+JOIN categories c ON r.category_id = c.id 
+ORDER BY r.id;
+
+-- Check contact submissions
+SELECT 
+    id,
+    name,
+    email,
+    subject,
+    address,
+    message,
+    created_at
+FROM contacts 
+ORDER BY created_at DESC;
+
+-- Count records in each table (verify 3-tier data flow)
+SELECT 
+    'categories' as table_name, 
+    COUNT(*) as record_count 
+FROM categories
+UNION ALL
+SELECT 
+    'resources', 
+    COUNT(*) 
+FROM resources
+UNION ALL
+SELECT 
+    'contacts', 
+    COUNT(*) 
+FROM contacts;
+```
+
 ## 🌟 Features
 
 ### Core Features

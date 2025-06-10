@@ -5,11 +5,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Send } from "lucide-react";
+import { Send, User, Mail, Phone, MapPin } from "lucide-react";
 import { insertContactSchema, type InsertContact } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+
+const CONTACT_SUBJECTS = [
+  "General Inquiry",
+  "Technical Support", 
+  "Partnership Opportunity",
+  "Training Request",
+  "Consulting Services",
+  "Platform Feedback",
+  "Bug Report",
+  "Feature Request",
+  "Billing Question",
+  "Other"
+];
 
 export default function Contact() {
   const { toast } = useToast();
@@ -20,6 +34,8 @@ export default function Contact() {
     defaultValues: {
       name: "",
       email: "",
+      contact: "",
+      address: "",
       subject: "",
       message: "",
     },
@@ -94,13 +110,58 @@ export default function Contact() {
               
               <FormField
                 control={form.control}
+                name="contact"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      Contact Number
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="subject"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Subject</FormLabel>
-                    <FormControl>
-                      <Input placeholder="What's this about?" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a subject" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CONTACT_SUBJECTS.map((subject) => (
+                          <SelectItem key={subject} value={subject}>
+                            {subject}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
