@@ -4,12 +4,14 @@ This Terraform configuration creates a complete AWS EKS cluster infrastructure f
 
 ## Architecture
 
-### Network Infrastructure
+### Network Infrastructure (3-Tier Architecture)
 - **VPC**: Custom VPC with CIDR 10.0.0.0/16
-- **Subnets**: 2 public and 2 private subnets across multiple AZs
-- **NAT Gateways**: 2 NAT gateways for high availability
+- **Web Tier**: 3 public subnets (10.0.0.0/24, 10.0.1.0/24, 10.0.2.0/24) for LoadBalancers
+- **Application Tier**: 3 private subnets (10.0.3.0/24, 10.0.4.0/24, 10.0.5.0/24) for EKS nodes
+- **Data Tier**: 3 database subnets (10.0.6.0/24, 10.0.7.0/24, 10.0.8.0/24) for data storage
+- **NAT Gateways**: 3 NAT gateways for high availability across all AZs
 - **Internet Gateway**: For public subnet internet access
-- **Route Tables**: Separate routing for public and private subnets
+- **Route Tables**: Separate routing for each tier
 
 ### EKS Cluster
 - **Cluster Name**: devops-hilltop-cluster
@@ -64,6 +66,30 @@ kubectl get nodes
 kubectl get pods -A
 ```
 
+### 6. Install AWS Load Balancer Controller
+```bash
+# Apply the controller manifest (update ACCOUNT_ID first)
+kubectl apply -f k8s/aws-load-balancer-controller.yaml
+
+# Or install via Helm
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=devops-hilltop-cluster \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller
+```
+
+### 7. Deploy Application with LoadBalancer
+```bash
+# Apply all manifests including GP3 storage class
+kubectl apply -f k8s/
+
+# Verify LoadBalancer service
+kubectl get service devops-hilltop-service -n devops-hilltop
+```
+
 ## Variables
 
 | Variable | Description | Default |
@@ -88,8 +114,10 @@ The configuration provides these outputs:
 **Estimated Monthly Costs (eu-central-1):**
 - EKS Control Plane: ~$73/month
 - 2x t3.medium instances: ~$60/month
-- NAT Gateways: ~$32/month
-- **Total: ~$165/month**
+- 3x NAT Gateways: ~$48/month
+- Network Load Balancer: ~$18/month
+- GP3 Storage (10GB): ~$1/month
+- **Total: ~$200/month**
 
 **Cost Optimization Tips:**
 - Use Spot instances for non-production workloads
@@ -167,15 +195,21 @@ kubectl get events --sort-by=.metadata.creationTimestamp
 After cluster creation, deploy the application:
 
 ```bash
-# Apply Kubernetes manifests
+# Apply GP3 storage class first
+kubectl apply -f k8s/storageclass-gp3.yaml
+
+# Apply all Kubernetes manifests
 kubectl apply -f k8s/
 
 # Check deployment status
 kubectl get deployments -n devops-hilltop
 
-# Get application URL
-NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-echo "Application URL: http://$NODE_IP:30080"
+# Get LoadBalancer URL
+LOAD_BALANCER_URL=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+echo "Application URL: http://$LOAD_BALANCER_URL"
+
+# Monitor LoadBalancer provisioning
+kubectl get service devops-hilltop-service -n devops-hilltop -w
 ```
 
-The application will be accessible via any worker node's public IP on port 30080.
+The application will be accessible via the AWS Network Load Balancer endpoint on port 80.

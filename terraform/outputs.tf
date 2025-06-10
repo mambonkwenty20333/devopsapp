@@ -38,14 +38,24 @@ output "vpc_cidr_block" {
   value       = aws_vpc.devops_hilltop_vpc.cidr_block
 }
 
+output "public_subnets" {
+  description = "List of IDs of public subnets (Web Tier)"
+  value       = aws_subnet.public_subnet[*].id
+}
+
 output "private_subnets" {
-  description = "List of IDs of private subnets"
+  description = "List of IDs of private subnets (Application Tier)"
   value       = aws_subnet.private_subnet[*].id
 }
 
-output "public_subnets" {
-  description = "List of IDs of public subnets"
-  value       = aws_subnet.public_subnet[*].id
+output "database_subnets" {
+  description = "List of IDs of database subnets (Data Tier)"
+  value       = aws_subnet.database_subnet[*].id
+}
+
+output "database_subnet_group_name" {
+  description = "Name of the database subnet group"
+  value       = aws_db_subnet_group.database_subnet_group.name
 }
 
 output "node_groups" {
@@ -71,4 +81,40 @@ output "kubeconfig_command" {
 output "cluster_status" {
   description = "Status of the EKS cluster"
   value       = aws_eks_cluster.devops_hilltop.status
+}
+
+output "load_balancer_controller_role_arn" {
+  description = "ARN of the AWS Load Balancer Controller IAM role"
+  value       = aws_iam_role.aws_load_balancer_controller.arn
+}
+
+output "oidc_provider_arn" {
+  description = "ARN of the OIDC Provider for EKS"
+  value       = aws_iam_openid_connect_provider.eks.arn
+}
+
+output "nat_gateway_ips" {
+  description = "Elastic IP addresses of NAT Gateways"
+  value       = aws_eip.nat_gateway_eip[*].public_ip
+}
+
+output "three_tier_architecture_summary" {
+  description = "Summary of the 3-tier architecture deployment"
+  value = {
+    web_tier = {
+      description = "Public subnets for LoadBalancer and internet-facing resources"
+      subnets     = aws_subnet.public_subnet[*].id
+      count       = length(aws_subnet.public_subnet)
+    }
+    application_tier = {
+      description = "Private subnets for EKS worker nodes and application pods"
+      subnets     = aws_subnet.private_subnet[*].id
+      count       = length(aws_subnet.private_subnet)
+    }
+    data_tier = {
+      description = "Database subnets for PostgreSQL and data storage"
+      subnets     = aws_subnet.database_subnet[*].id
+      count       = length(aws_subnet.database_subnet)
+    }
+  }
 }
