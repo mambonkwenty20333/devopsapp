@@ -72,12 +72,32 @@ jobs:
           name: Deploy to EKS staging
           command: |
             kubectl apply -f k8s/
+            kubectl rollout status deployment/postgres-deployment -n devops-hilltop --timeout=300s
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=300s
       - run:
-          name: Verify deployment
+          name: Initialize database
+          command: |
+            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- npm run db:push
+      - run:
+          name: Verify deployment and database
           command: |
             kubectl get pods -n devops-hilltop
             kubectl get services -n devops-hilltop
+            # Test database connectivity
+            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- node -e "
+              const { pool } = require('./server/db.js');
+              pool.query('SELECT COUNT(*) FROM categories').then(result => {
+                console.log('Database connection successful. Categories count:', result.rows[0].count);
+                process.exit(0);
+              }).catch(err => {
+                console.error('Database connection failed:', err.message);
+                process.exit(1);
+              });
+            "
+            # Test health endpoint
+            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+            NODE_PORT=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.spec.ports[0].nodePort}')
+            curl -f http://$NODE_IP:$NODE_PORT/health || echo "Health check endpoint not yet accessible"
 
   deploy-production:
     executor: aws-executor
@@ -100,14 +120,33 @@ jobs:
           name: Deploy to EKS production
           command: |
             kubectl apply -f k8s/
+            kubectl rollout status deployment/postgres-deployment -n devops-hilltop --timeout=600s
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=600s
+      - run:
+          name: Initialize production database
+          command: |
+            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- npm run db:push
       - run:
           name: Verify production deployment
           command: |
             kubectl get pods -n devops-hilltop
             kubectl get services -n devops-hilltop
+            # Test database connectivity
+            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- node -e "
+              const { pool } = require('./server/db.js');
+              pool.query('SELECT COUNT(*) FROM categories').then(result => {
+                console.log('Production database ready. Categories count:', result.rows[0].count);
+                process.exit(0);
+              }).catch(err => {
+                console.error('Production database connection failed:', err.message);
+                process.exit(1);
+              });
+            "
+            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
             NODE_PORT=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.spec.ports[0].nodePort}')
-            echo "Application deployed successfully on NodePort: $NODE_PORT"
+            echo "Production deployment successful!"
+            echo "Application URL: http://$NODE_IP:$NODE_PORT"
+            echo "Health Check: http://$NODE_IP:$NODE_PORT/health"
 
 workflows:
   version: 2
