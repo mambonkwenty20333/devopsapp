@@ -351,10 +351,11 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
   role       = aws_iam_role.eks_node_group_role.name
 }
 
-# EKS Cluster
+# EKS Cluster (only create if not using existing)
 resource "aws_eks_cluster" "devops_hilltop" {
+  count    = var.use_existing_cluster ? 0 : 1
   name     = var.cluster_name
-  role_arn = aws_iam_role.eks_cluster_role.arn
+  role_arn = aws_iam_role.eks_cluster_role[0].arn
   version  = var.kubernetes_version
 
   vpc_config {

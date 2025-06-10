@@ -1,16 +1,16 @@
 output "cluster_id" {
   description = "EKS cluster ID"
-  value       = aws_eks_cluster.devops_hilltop.id
+  value       = var.use_existing_cluster ? data.aws_eks_cluster.existing[0].id : aws_eks_cluster.devops_hilltop[0].id
 }
 
 output "cluster_arn" {
   description = "EKS cluster ARN"
-  value       = aws_eks_cluster.devops_hilltop.arn
+  value       = var.use_existing_cluster ? data.aws_eks_cluster.existing[0].arn : aws_eks_cluster.devops_hilltop[0].arn
 }
 
 output "cluster_endpoint" {
   description = "Endpoint for EKS control plane"
-  value       = aws_eks_cluster.devops_hilltop.endpoint
+  value       = var.use_existing_cluster ? data.aws_eks_cluster.existing[0].endpoint : aws_eks_cluster.devops_hilltop[0].endpoint
 }
 
 output "cluster_security_group_id" {

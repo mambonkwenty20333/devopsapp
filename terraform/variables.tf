@@ -51,3 +51,21 @@ variable "node_group_min_size" {
   type        = number
   default     = 1
 }
+
+variable "use_existing_cluster" {
+  description = "Whether to use an existing EKS cluster instead of creating a new one"
+  type        = bool
+  default     = false
+}
+
+variable "existing_cluster_name" {
+  description = "Name of existing EKS cluster (required if use_existing_cluster is true)"
+  type        = string
+  default     = ""
+}
+
+variable "existing_vpc_name" {
+  description = "Name of existing VPC (required if use_existing_cluster is true)"
+  type        = string
+  default     = ""
+}
