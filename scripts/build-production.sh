@@ -6,20 +6,17 @@ echo "Building production bundle..."
 echo "Building frontend with Vite..."
 npm run build
 
-# Build backend with proper exclusions
+# Build backend using production entry point (no Vite dependencies)
 echo "Building backend with esbuild..."
-npx esbuild server/index.ts \
+npx esbuild server/production-entry.ts \
   --platform=node \
   --packages=external \
   --bundle \
   --format=esm \
   --outdir=dist \
-  --external:vite \
-  --external:@vitejs/plugin-react \
-  --external:@replit/vite-plugin-runtime-error-modal \
-  --external:@replit/vite-plugin-cartographer \
+  --outfile=dist/server.js \
   --define:process.env.NODE_ENV=\"production\"
 
 echo "Production build complete!"
-echo "Backend: dist/index.js"
-echo "Frontend: dist/public/"
+echo "Backend: dist/server.js"
+echo "Frontend: dist/"
