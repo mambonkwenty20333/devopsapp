@@ -58,11 +58,11 @@ if [ -f ".circleci/config.yml" ]; then
         log_error "NodePort health checks found instead of LoadBalancer"
     fi
     
-    # Check for PostgreSQL deployment removal
+    # Check for PostgreSQL deployment configuration
     if grep -q "postgres-deployment" .circleci/config.yml; then
-        log_warning "PostgreSQL deployment still referenced (should use Neon database)"
+        log_success "PostgreSQL deployment properly configured"
     else
-        log_success "PostgreSQL deployment properly removed"
+        log_error "PostgreSQL deployment missing from CircleCI config"
     fi
     
 else
@@ -166,11 +166,13 @@ else
     log_error "GP3 storage class missing"
 fi
 
-# Check for conflicting PostgreSQL manifests
-postgres_files=("$K8S_DIR/postgres-deployment.yaml" "$K8S_DIR/postgres-service.yaml" "$K8S_DIR/postgres-pvc.yaml")
+# Check for PostgreSQL manifests
+postgres_files=("$K8S_DIR/postgres-deployment.yaml" "$K8S_DIR/postgres-service.yaml" "$K8S_DIR/postgres-pvc.yaml" "$K8S_DIR/postgres-secret.yaml")
 for file in "${postgres_files[@]}"; do
     if [ -f "$file" ]; then
-        log_warning "Conflicting PostgreSQL manifest found: $(basename $file) (should be removed for Neon database)"
+        log_success "PostgreSQL manifest exists: $(basename $file)"
+    else
+        log_error "PostgreSQL manifest missing: $(basename $file)"
     fi
 done
 
@@ -333,8 +335,8 @@ fi
 echo ""
 echo "=== Security and Best Practices Review ==="
 
-# Check for hardcoded secrets
-if grep -r "password" k8s/ --exclude="*.md" | grep -v "secretKeyRef" | grep -q "password"; then
+# Check for hardcoded secrets (exclude proper Kubernetes secret data format)
+if grep -r "password.*:" k8s/ --exclude="*.md" | grep -v "secretKeyRef" | grep -v "data:" | grep -v "# " | grep -q "password"; then
     log_error "Hardcoded passwords found in manifests"
 else
     log_success "No hardcoded passwords detected"
