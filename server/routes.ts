@@ -5,6 +5,15 @@ import { insertCategorySchema, insertResourceSchema, insertContactSchema } from 
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      service: "DevOps with Hilltop"
+    });
+  });
+
   // Categories routes
   app.get("/api/categories", async (req, res) => {
     try {
