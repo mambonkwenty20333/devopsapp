@@ -18,7 +18,7 @@ export const resources = pgTable("resources", {
   categoryId: integer("category_id").references(() => categories.id).notNull(),
   tags: text("tags").array().default([]),
   imageUrl: text("image_url"),
-  featured: boolean("featured").default(false),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
