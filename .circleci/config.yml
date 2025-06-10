@@ -25,12 +25,16 @@ jobs:
           command: |
             chmod +x test.sh
             chmod +x scripts/*.sh
+            mkdir -p test-results
             ./test.sh
       - run:
           name: Run linting
           command: echo "Linting passed - basic syntax check completed"
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: test-results
+          destination: test-results
 
   build-and-push:
     executor: node-executor
