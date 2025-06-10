@@ -169,7 +169,7 @@ docker-compose down
    ```bash
    eksctl create cluster \
      --name devops-hilltop-cluster \
-     --region us-west-2 \
+     --region eu-central-1 \
      --nodegroup-name workers \
      --node-type t3.medium \
      --nodes 3 \
@@ -182,7 +182,7 @@ docker-compose down
 
 1. **Configure kubectl for your cluster**
    ```bash
-   aws eks update-kubeconfig --region us-west-2 --name devops-hilltop-cluster
+   aws eks update-kubeconfig --region eu-central-1 --name devops-hilltop-cluster
    ```
 
 2. **Deploy application to EKS**
@@ -228,7 +228,7 @@ docker-compose down
    ```
    AWS_ACCESS_KEY_ID=your_aws_access_key_id
    AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-   AWS_DEFAULT_REGION=us-west-2
+   AWS_DEFAULT_REGION=eu-central-1
    ```
    
    **EKS Configuration:**
