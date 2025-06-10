@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mountain, Search, Settings } from "lucide-react";
+import { Zap, Search, Settings } from "lucide-react";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,24 +20,66 @@ export default function Header() {
           <div className="flex items-center space-x-8">
             <Link href="/">
               <div className="flex items-center cursor-pointer">
-                <Mountain className="text-primary text-2xl mr-3" />
-                <h1 className="text-xl font-bold text-slate-800">DevOps with Hilltop</h1>
+                <div className="relative">
+                  <Zap className="text-primary text-2xl mr-3" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                </div>
+                <h1 className="text-xl font-bold text-slate-800">
+                  <span className="text-primary">DevOps</span>
+                  <span className="text-accent"> with </span>
+                  <span className="text-slate-800">Hilltop</span>
+                </h1>
               </div>
             </Link>
             <nav className="hidden md:flex space-x-6">
-              <a href="#resources" className="text-slate-600 hover:text-primary transition-colors duration-200">
+              <a 
+                href="#resources" 
+                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('resources')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Resources
               </a>
-              <a href="#categories" className="text-slate-600 hover:text-primary transition-colors duration-200">
+              <a 
+                href="#categories" 
+                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Categories
               </a>
-              <a href="#tools" className="text-slate-600 hover:text-primary transition-colors duration-200">
+              <a 
+                href="#tools" 
+                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('resources')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Tools
               </a>
-              <a href="#tutorials" className="text-slate-600 hover:text-primary transition-colors duration-200">
+              <a 
+                href="#tutorials" 
+                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('resources')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Tutorials
               </a>
-              <a href="#contact" className="text-slate-600 hover:text-primary transition-colors duration-200">
+              <a 
+                href="#contact" 
+                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
                 Contact
               </a>
             </nav>

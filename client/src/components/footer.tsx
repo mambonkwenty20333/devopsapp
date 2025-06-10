@@ -1,4 +1,4 @@
-import { Mountain } from "lucide-react";
+import { Zap } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -7,7 +7,10 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <Mountain className="text-primary text-2xl mr-3" />
+              <div className="relative">
+                <Zap className="text-primary text-2xl mr-3" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+              </div>
               <h4 className="text-xl font-bold">DevOps with Hilltop</h4>
             </div>
             <p className="text-slate-300 mb-4">

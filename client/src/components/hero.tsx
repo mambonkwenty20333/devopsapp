@@ -42,8 +42,8 @@ export default function Hero() {
           </div>
           <div className="relative">
             <img 
-              src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
-              alt="DevOps workflow visualization with servers and monitoring dashboards" 
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
+              alt="DevOps end-to-end lifecycle showing development, testing, deployment and monitoring phases" 
               className="rounded-xl shadow-2xl w-full h-auto"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl"></div>
