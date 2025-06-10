@@ -32,13 +32,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install production dependencies and drizzle-kit for migrations
+RUN npm ci --include=dev && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder --chown=devops:nodejs /app/dist ./dist
 COPY --from=builder --chown=devops:nodejs /app/server ./server
 COPY --from=builder --chown=devops:nodejs /app/shared ./shared
+COPY --from=builder --chown=devops:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
 # Change ownership of the app directory
 RUN chown -R devops:nodejs /app
