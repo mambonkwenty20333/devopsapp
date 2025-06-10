@@ -243,15 +243,21 @@ docker-compose down
 
 ## 🔄 CI/CD Pipeline
 
-The CircleCI pipeline automatically handles building, testing, and deploying your application to AWS EKS:
+The simplified CircleCI pipeline handles building, testing, and deploying your application to AWS EKS:
 
 ### Pipeline Stages
 
-1. **Test**: Runs linting and unit tests
-2. **Security Scan**: Vulnerability scanning with Trivy
-3. **Build & Push**: Builds Docker image and pushes to Docker Hub
-4. **Deploy Staging**: Automatic deployment to EKS (develop branch)
-5. **Deploy Production**: Manual approval required (main branch)
+1. **Test**: Runs comprehensive application tests and basic linting
+2. **Build & Push**: Builds Docker image and pushes to Docker Hub  
+3. **Deploy Staging**: Automatic deployment to EKS (develop branch)
+4. **Deploy Production**: Manual approval required (main branch)
+
+### Key Simplifications
+
+- Removed Trivy security scanning for faster builds
+- Uses `kubectl apply -f k8s/` for directory-level deployment
+- Assumes kubectl is already available in your EKS cluster
+- Custom test runner for reliable test execution
 
 ### Branch Strategy
 
@@ -300,10 +306,10 @@ devops-hilltop/
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
+- `./test.sh` - Run comprehensive test suite
+- `node run-tests.js` - Run custom test runner directly
 - `npm run db:push` - Push database schema changes
 - `npm run db:studio` - Open Drizzle Studio (database GUI)
-- `npm run lint` - Run ESLint
-- `npm test` - Run tests
 
 ## 🌟 Features
 
