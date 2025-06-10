@@ -1,0 +1,95 @@
+replicaCount: 3
+
+image:
+  repository: devops-hilltop
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: devops-hilltop.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: devops-hilltop-tls
+      hosts:
+        - devops-hilltop.yourdomain.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "changeme"
+    database: "devops_hilltop"
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+env:
+  NODE_ENV: "production"
+  PORT: "5000"
+  APP_NAME: "DevOps with Hilltop"
+
+secrets:
+  DATABASE_URL: "postgresql://postgres:changeme@devops-hilltop-postgresql:5432/devops_hilltop"
+  PGUSER: "postgres"
+  PGPASSWORD: "changeme"
+  PGHOST: "devops-hilltop-postgresql"
+  PGPORT: "5432"
+  PGDATABASE: "devops_hilltop"
