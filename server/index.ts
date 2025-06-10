@@ -1,11 +1,25 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { metricsMiddleware, register } from "./metrics";
 
 export async function createApp() {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
+  
+  // Add Prometheus metrics middleware
+  app.use(metricsMiddleware);
+  
+  // Metrics endpoint for Prometheus scraping
+  app.get('/metrics', async (req, res) => {
+    try {
+      res.set('Content-Type', register.contentType);
+      res.end(await register.metrics());
+    } catch (ex) {
+      res.status(500).end(ex);
+    }
+  });
 
   app.use((req, res, next) => {
     const start = Date.now();

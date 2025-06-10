@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCategorySchema, insertResourceSchema, insertContactSchema } from "@shared/schema";
 import { z } from "zod";
+import { recordContactFormSubmission, recordDatabaseQuery, recordDatabaseError } from "./metrics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
@@ -162,12 +163,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactSchema.parse(req.body);
+      const start = Date.now();
+      
       const contact = await storage.createContact(validatedData);
+      
+      // Record metrics for successful contact form submission
+      recordContactFormSubmission(validatedData.subject, 'success');
+      recordDatabaseQuery('insert', 'contacts', (Date.now() - start) / 1000);
+      
       res.status(201).json({ message: "Contact message sent successfully", id: contact.id });
     } catch (error) {
+      // Record metrics for failed contact form submission
       if (error instanceof z.ZodError) {
+        recordContactFormSubmission(req.body?.subject || 'unknown', 'error');
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
+      
+      recordContactFormSubmission(req.body?.subject || 'unknown', 'error');
+      recordDatabaseError();
       res.status(500).json({ message: "Failed to send contact message" });
     }
   });
