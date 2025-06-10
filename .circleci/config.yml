@@ -34,22 +34,21 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - docker/check:
           docker-username: DOCKER_USERNAME
           docker-password: DOCKER_PASSWORD
-      - docker/build:
-          image: hilltopconsultancy/devops-hilltop
-          tag: << pipeline.git.revision >>
-      - docker/push:
-          image: hilltopconsultancy/devops-hilltop
-          tag: << pipeline.git.revision >>
-      - docker/build:
-          image: hilltopconsultancy/devops-hilltop
-          tag: latest
-      - docker/push:
-          image: hilltopconsultancy/devops-hilltop
-          tag: latest
+      - run:
+          name: Build and push Docker images
+          command: |
+            # Build with commit SHA tag
+            docker build -t hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >> .
+            docker push hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>
+            
+            # Tag and push as latest
+            docker tag hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >> hilltopconsultancy/devops-hilltop:latest
+            docker push hilltopconsultancy/devops-hilltop:latest
+          no_output_timeout: 20m
 
   deploy-staging:
     executor: aws-executor
