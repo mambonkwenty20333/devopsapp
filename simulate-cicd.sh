@@ -9,7 +9,7 @@ echo "🚀 Starting CI/CD Pipeline Simulation for DevOps with Hilltop"
 echo "============================================================"
 
 # Configuration
-DOCKER_IMAGE="devops-hilltop"
+DOCKER_IMAGE="hilltopconsultancy/devops-hilltop"
 GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "abc1234")
 REGION="eu-central-1"
 CLUSTER_NAME="devops-hilltop-cluster"

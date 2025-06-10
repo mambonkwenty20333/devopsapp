@@ -32,6 +32,12 @@ export default function Header() {
               </div>
             </Link>
             <nav className="hidden md:flex space-x-6">
+              <Link href="/" className="text-slate-600 hover:text-primary transition-colors duration-200">
+                Home
+              </Link>
+              <Link href="/dashboard" className="text-slate-600 hover:text-primary transition-colors duration-200">
+                Dashboard
+              </Link>
               <a 
                 href="#resources" 
                 className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
@@ -41,36 +47,6 @@ export default function Header() {
                 }}
               >
                 Resources
-              </a>
-              <a 
-                href="#categories" 
-                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Categories
-              </a>
-              <a 
-                href="#tools" 
-                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('resources')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Tools
-              </a>
-              <a 
-                href="#tutorials" 
-                className="text-slate-600 hover:text-primary transition-colors duration-200 cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('resources')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Tutorials
               </a>
               <a 
                 href="#contact" 
