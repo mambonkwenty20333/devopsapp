@@ -20,12 +20,12 @@ output "cluster_security_group_id" {
 
 output "cluster_certificate_authority_data" {
   description = "Base64 encoded certificate data required to communicate with the cluster"
-  value       = aws_eks_cluster.devops_hilltop.certificate_authority[0].data
+  value       = var.use_existing_cluster ? data.aws_eks_cluster.existing[0].certificate_authority[0].data : aws_eks_cluster.devops_hilltop[0].certificate_authority[0].data
 }
 
 output "cluster_version" {
   description = "The Kubernetes version for the EKS cluster"
-  value       = aws_eks_cluster.devops_hilltop.version
+  value       = var.use_existing_cluster ? data.aws_eks_cluster.existing[0].version : aws_eks_cluster.devops_hilltop[0].version
 }
 
 output "vpc_id" {
