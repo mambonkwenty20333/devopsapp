@@ -1,7 +1,16 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import { metricsMiddleware, register } from "./metrics";
+
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
 export async function createApp() {
   const app = express();
@@ -64,9 +73,11 @@ export async function createApp() {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  if (process.env.NODE_ENV === "development") {
+    const { setupVite, log } = await import("./vite");
     await setupVite(app, server);
   } else {
+    const { serveStatic, log } = await import("./production");
     serveStatic(app);
   }
 
