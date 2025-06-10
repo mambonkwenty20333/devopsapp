@@ -15,13 +15,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: devops-platform
-      component: web
+      app: devops-hilltop-app
   template:
     metadata:
       labels:
-        app: devops-platform
-        component: web
+        app: devops-hilltop-app
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "5000"

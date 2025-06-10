@@ -1,8 +1,8 @@
 replicaCount: 3
 
 image:
-  repository: devops-hilltop
-  pullPolicy: IfNotPresent
+  repository: hilltopconsultancy/devops-hilltop
+  pullPolicy: Always
   tag: "latest"
 
 imagePullSecrets: []
@@ -29,10 +29,13 @@ securityContext:
     - ALL
 
 service:
-  type: NodePort
+  type: LoadBalancer
   port: 80
   targetPort: 5000
-  nodePort: 30080
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 
 ingress:
   enabled: false

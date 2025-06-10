@@ -18,5 +18,4 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: devops-platform
-    component: web
+    app: devops-hilltop-app
