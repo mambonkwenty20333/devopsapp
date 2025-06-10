@@ -220,8 +220,8 @@ docker-compose down
    
    **Docker Hub Credentials:**
    ```
-   DOCKER_USERNAME=your_dockerhub_username
-   DOCKER_PASSWORD=your_dockerhub_password_or_token
+   DOCKER_USERNAME=hilltopconsultancy
+   DOCKER_PASSWORD=your_dockerhub_access_token
    ```
    
    **AWS Credentials:**

@@ -40,16 +40,16 @@ jobs:
           docker-username: DOCKER_USERNAME
           docker-password: DOCKER_PASSWORD
       - docker/build:
-          image: $DOCKER_USERNAME/devops-hilltop
+          image: hilltopconsultancy/devops-hilltop
           tag: << pipeline.git.revision >>
       - docker/push:
-          image: $DOCKER_USERNAME/devops-hilltop
+          image: hilltopconsultancy/devops-hilltop
           tag: << pipeline.git.revision >>
       - docker/build:
-          image: $DOCKER_USERNAME/devops-hilltop
+          image: hilltopconsultancy/devops-hilltop
           tag: latest
       - docker/push:
-          image: $DOCKER_USERNAME/devops-hilltop
+          image: hilltopconsultancy/devops-hilltop
           tag: latest
 
   deploy-staging:
@@ -67,7 +67,7 @@ jobs:
       - run:
           name: Update Kubernetes manifests with image tag
           command: |
-            sed -i "s|image: devops-hilltop:latest|image: $DOCKER_USERNAME/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
+            sed -i "s|image: devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS staging
           command: |
@@ -114,7 +114,7 @@ jobs:
       - run:
           name: Update Kubernetes manifests for production
           command: |
-            sed -i "s|image: devops-hilltop:latest|image: $DOCKER_USERNAME/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
+            sed -i "s|image: devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
             sed -i "s|replicas: 3|replicas: 5|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS production

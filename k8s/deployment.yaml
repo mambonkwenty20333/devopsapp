@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: devops-hilltop
-        image: devops-hilltop:latest
+        image: hilltopconsultancy/devops-hilltop:latest
         ports:
         - containerPort: 5000
           name: http
