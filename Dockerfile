@@ -37,7 +37,6 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder --chown=devops:nodejs /app/dist ./dist
-COPY --from=builder --chown=devops:nodejs /app/client/dist ./client/dist
 COPY --from=builder --chown=devops:nodejs /app/server ./server
 COPY --from=builder --chown=devops:nodejs /app/shared ./shared
 
