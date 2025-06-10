@@ -31,17 +31,27 @@ This application follows a robust 3-tier architecture:
 
 ### DevOps & Deployment
 - Docker for containerization
-- Kubernetes for orchestration
-- Helm charts for package management
-- CircleCI for CI/CD pipeline
+- Kubernetes for orchestration with NodePort service
+- CircleCI for CI/CD pipeline with AWS EKS deployment
+- AWS EKS for production Kubernetes cluster
 
 ## 📋 Prerequisites
 
+### Local Development
 - Node.js 20.x or higher
 - PostgreSQL 13+ (or use Docker)
-- Docker (for containerization)
-- Kubernetes cluster (for deployment)
-- Helm 3.x (for package management)
+
+### AWS EKS Deployment
+- AWS CLI configured with appropriate permissions
+- AWS EKS cluster (see setup instructions below)
+- Docker Hub account for image registry
+- CircleCI account for CI/CD pipeline
+
+### Required AWS Permissions
+Your AWS IAM user/role needs the following permissions:
+- EKS cluster access (eks:DescribeCluster, eks:ListClusters)
+- EC2 permissions for EKS node groups
+- IAM permissions for EKS service roles
 
 ## 🚀 Quick Start
 
@@ -125,58 +135,111 @@ docker-compose logs -f
 docker-compose down
 ```
 
-## ☸️ Kubernetes Deployment
+## ☸️ AWS EKS Deployment Setup
 
-### Manual Deployment
+### Step 1: Create AWS EKS Cluster
 
-1. **Apply Kubernetes manifests**
+1. **Install required tools**
    ```bash
-   # Create namespace
-   kubectl apply -f k8s/namespace.yaml
+   # Install AWS CLI
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   unzip awscliv2.zip
+   sudo ./aws/install
    
-   # Apply configurations
+   # Install eksctl
+   curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+   sudo mv /tmp/eksctl /usr/local/bin
+   
+   # Install kubectl
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   chmod +x kubectl
+   sudo mv kubectl /usr/local/bin/
+   ```
+
+2. **Configure AWS credentials**
+   ```bash
+   aws configure
+   # Enter your AWS Access Key ID
+   # Enter your AWS Secret Access Key
+   # Enter your default region (e.g., us-west-2)
+   # Enter output format (json)
+   ```
+
+3. **Create EKS cluster**
+   ```bash
+   eksctl create cluster \
+     --name devops-hilltop-cluster \
+     --region us-west-2 \
+     --nodegroup-name workers \
+     --node-type t3.medium \
+     --nodes 3 \
+     --nodes-min 2 \
+     --nodes-max 5 \
+     --managed
+   ```
+
+### Step 2: Manual Kubernetes Deployment
+
+1. **Configure kubectl for your cluster**
+   ```bash
+   aws eks update-kubeconfig --region us-west-2 --name devops-hilltop-cluster
+   ```
+
+2. **Deploy application to EKS**
+   ```bash
+   # Apply Kubernetes manifests
+   kubectl apply -f k8s/namespace.yaml
    kubectl apply -f k8s/configmap.yaml
    kubectl apply -f k8s/secret.yaml
-   
-   # Deploy application
    kubectl apply -f k8s/deployment.yaml
    kubectl apply -f k8s/service.yaml
-   kubectl apply -f k8s/ingress.yaml
    kubectl apply -f k8s/hpa.yaml
    ```
 
-2. **Verify deployment**
+3. **Access your application**
    ```bash
-   kubectl get pods -n devops-hilltop
-   kubectl get services -n devops-hilltop
-   ```
-
-### Helm Deployment
-
-1. **Install with Helm**
-   ```bash
-   # Add and update helm repo (if using external charts)
-   helm repo update
+   # Get the NodePort
+   kubectl get service devops-hilltop-service -n devops-hilltop
    
-   # Install the application
-   helm install devops-hilltop ./helm/devops-hilltop \
-     --namespace devops-hilltop \
-     --create-namespace \
-     --set image.tag=latest \
-     --set ingress.hosts[0].host=your-domain.com
+   # Get node external IPs
+   kubectl get nodes -o wide
+   
+   # Access via: http://<NODE_EXTERNAL_IP>:30080
    ```
 
-2. **Upgrade deployment**
-   ```bash
-   helm upgrade devops-hilltop ./helm/devops-hilltop \
-     --namespace devops-hilltop \
-     --set image.tag=v1.1.0
+### Step 3: Setup CircleCI for Automated Deployment
+
+1. **Connect your repository to CircleCI**
+   - Go to [CircleCI](https://circleci.com)
+   - Sign up/Login with your GitHub/Bitbucket account
+   - Add your project repository
+
+2. **Configure CircleCI Environment Variables**
+   
+   In your CircleCI project settings, add these environment variables:
+   
+   **Docker Hub Credentials:**
+   ```
+   DOCKER_USERNAME=your_dockerhub_username
+   DOCKER_PASSWORD=your_dockerhub_password_or_token
+   ```
+   
+   **AWS Credentials:**
+   ```
+   AWS_ACCESS_KEY_ID=your_aws_access_key_id
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+   AWS_DEFAULT_REGION=us-west-2
+   ```
+   
+   **EKS Configuration:**
+   ```
+   EKS_CLUSTER_NAME=devops-hilltop-cluster
    ```
 
-3. **Uninstall**
-   ```bash
-   helm uninstall devops-hilltop --namespace devops-hilltop
-   ```
+3. **Deployment Workflow**
+   - Push to `develop` branch → Automatically deploys to staging
+   - Push to `main` branch → Requires manual approval for production deployment
+   - Each deployment uses the git commit SHA as the Docker image tag
 
 ## 🔄 CI/CD Pipeline
 

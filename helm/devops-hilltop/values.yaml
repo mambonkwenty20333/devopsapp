@@ -29,26 +29,13 @@ securityContext:
     - ALL
 
 service:
-  type: ClusterIP
+  type: NodePort
   port: 80
   targetPort: 5000
+  nodePort: 30080
 
 ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-  hosts:
-    - host: devops-hilltop.yourdomain.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: devops-hilltop-tls
-      hosts:
-        - devops-hilltop.yourdomain.com
+  enabled: false
 
 resources:
   limits:
