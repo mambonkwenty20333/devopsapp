@@ -21,8 +21,11 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run:
-          name: Run tests
-          command: ./test.sh
+          name: Set script permissions and run tests
+          command: |
+            chmod +x test.sh
+            chmod +x scripts/*.sh
+            ./test.sh
       - run:
           name: Run linting
           command: echo "Linting passed - basic syntax check completed"
@@ -55,6 +58,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Set script permissions
+          command: |
+            chmod +x scripts/*.sh
+      - run:
           name: Configure kubectl for EKS
           command: |
             aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
@@ -81,6 +88,10 @@ jobs:
     executor: aws-executor
     steps:
       - checkout
+      - run:
+          name: Set script permissions
+          command: |
+            chmod +x scripts/*.sh
       - run:
           name: Configure kubectl for EKS
           command: |
