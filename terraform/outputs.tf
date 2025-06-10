@@ -15,7 +15,7 @@ output "cluster_endpoint" {
 
 output "cluster_security_group_id" {
   description = "Security group ID attached to the EKS cluster"
-  value       = aws_eks_cluster.devops_hilltop.vpc_config[0].cluster_security_group_id
+  value       = var.use_existing_cluster ? null : aws_eks_cluster.devops_hilltop[0].vpc_config[0].cluster_security_group_id
 }
 
 output "cluster_certificate_authority_data" {

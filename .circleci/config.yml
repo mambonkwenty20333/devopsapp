@@ -67,12 +67,21 @@ jobs:
       - run:
           name: Update Kubernetes manifests with image tag
           command: |
-            sed -i "s|image: devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
+            sed -i "s|image: hilltopconsultancy/devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS staging
           command: |
-            kubectl apply -f k8s/
-            kubectl rollout status deployment/postgres-deployment -n devops-hilltop --timeout=300s
+            # Apply GP3 storage class first
+            kubectl apply -f k8s/storageclass-gp3.yaml
+            # Apply namespace and configurations
+            kubectl apply -f k8s/namespace.yaml
+            kubectl apply -f k8s/configmap.yaml
+            kubectl apply -f k8s/secret.yaml
+            # Apply main deployment and service
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/hpa.yaml
+            # Wait for deployment to be ready
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=300s
       - run:
           name: Initialize database
@@ -94,10 +103,13 @@ jobs:
                 process.exit(1);
               });
             "
-            # Test health endpoint
-            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-            NODE_PORT=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.spec.ports[0].nodePort}')
-            curl -f http://$NODE_IP:$NODE_PORT/health || echo "Health check endpoint not yet accessible"
+            # Test health endpoint via LoadBalancer
+            LOAD_BALANCER_URL=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            if [ -n "$LOAD_BALANCER_URL" ]; then
+              curl -f http://$LOAD_BALANCER_URL/health || echo "LoadBalancer health check not yet ready"
+            else
+              echo "LoadBalancer still provisioning..."
+            fi
 
   deploy-production:
     executor: aws-executor
@@ -114,13 +126,22 @@ jobs:
       - run:
           name: Update Kubernetes manifests for production
           command: |
-            sed -i "s|image: devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
+            sed -i "s|image: hilltopconsultancy/devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
             sed -i "s|replicas: 3|replicas: 5|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS production
           command: |
-            kubectl apply -f k8s/
-            kubectl rollout status deployment/postgres-deployment -n devops-hilltop --timeout=600s
+            # Apply GP3 storage class first
+            kubectl apply -f k8s/storageclass-gp3.yaml
+            # Apply namespace and configurations
+            kubectl apply -f k8s/namespace.yaml
+            kubectl apply -f k8s/configmap.yaml
+            kubectl apply -f k8s/secret.yaml
+            # Apply main deployment and service
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/hpa.yaml
+            # Wait for deployment to be ready
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=600s
       - run:
           name: Initialize production database
@@ -142,11 +163,14 @@ jobs:
                 process.exit(1);
               });
             "
-            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-            NODE_PORT=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.spec.ports[0].nodePort}')
+            LOAD_BALANCER_URL=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             echo "Production deployment successful!"
-            echo "Application URL: http://$NODE_IP:$NODE_PORT"
-            echo "Health Check: http://$NODE_IP:$NODE_PORT/health"
+            if [ -n "$LOAD_BALANCER_URL" ]; then
+              echo "Application URL: http://$LOAD_BALANCER_URL"
+              echo "Health Check: http://$LOAD_BALANCER_URL/health"
+            else
+              echo "LoadBalancer provisioning in progress..."
+            fi
 
 workflows:
   version: 2
