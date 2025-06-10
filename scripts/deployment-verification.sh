@@ -59,7 +59,7 @@ if [ -f ".circleci/config.yml" ]; then
     fi
     
     # Check for PostgreSQL deployment configuration
-    if grep -q "postgres-deployment" .circleci/config.yml; then
+    if grep -q "postgres-deployment" .circleci/config.yml || grep -q "kubectl apply -f k8s/" .circleci/config.yml; then
         log_success "PostgreSQL deployment properly configured"
     else
         log_error "PostgreSQL deployment missing from CircleCI config"

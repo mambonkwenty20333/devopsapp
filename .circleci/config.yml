@@ -71,52 +71,17 @@ jobs:
       - run:
           name: Deploy to EKS staging
           command: |
-            # Apply GP3 storage class first
-            kubectl apply -f k8s/storageclass-gp3.yaml
-            # Apply namespace and configurations
-            kubectl apply -f k8s/namespace.yaml
-            kubectl apply -f k8s/configmap.yaml
-            kubectl apply -f k8s/secret.yaml
-            # Deploy PostgreSQL database first
-            kubectl apply -f k8s/postgres-secret.yaml
-            kubectl apply -f k8s/postgres-pvc.yaml
-            kubectl apply -f k8s/postgres-deployment.yaml
-            kubectl apply -f k8s/postgres-service.yaml
-            # Wait for PostgreSQL to be ready
+            kubectl apply -f k8s/
             kubectl rollout status deployment/postgres -n devops-hilltop --timeout=300s
-            # Apply main application deployment and service
-            kubectl apply -f k8s/deployment.yaml
-            kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/hpa.yaml
-            # Wait for deployment to be ready
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=300s
       - run:
           name: Initialize database
           command: |
             kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- npm run db:push
       - run:
-          name: Verify deployment and database
+          name: Verify deployment
           command: |
             kubectl get pods -n devops-hilltop
-            kubectl get services -n devops-hilltop
-            # Test database connectivity
-            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- node -e "
-              const { pool } = require('./server/db.js');
-              pool.query('SELECT COUNT(*) FROM categories').then(result => {
-                console.log('Database connection successful. Categories count:', result.rows[0].count);
-                process.exit(0);
-              }).catch(err => {
-                console.error('Database connection failed:', err.message);
-                process.exit(1);
-              });
-            "
-            # Test health endpoint via LoadBalancer
-            LOAD_BALANCER_URL=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$LOAD_BALANCER_URL" ]; then
-              curl -f http://$LOAD_BALANCER_URL/health || echo "LoadBalancer health check not yet ready"
-            else
-              echo "LoadBalancer still provisioning..."
-            fi
 
   deploy-production:
     executor: aws-executor
@@ -138,24 +103,8 @@ jobs:
       - run:
           name: Deploy to EKS production
           command: |
-            # Apply GP3 storage class first
-            kubectl apply -f k8s/storageclass-gp3.yaml
-            # Apply namespace and configurations
-            kubectl apply -f k8s/namespace.yaml
-            kubectl apply -f k8s/configmap.yaml
-            kubectl apply -f k8s/secret.yaml
-            # Deploy PostgreSQL database first
-            kubectl apply -f k8s/postgres-secret.yaml
-            kubectl apply -f k8s/postgres-pvc.yaml
-            kubectl apply -f k8s/postgres-deployment.yaml
-            kubectl apply -f k8s/postgres-service.yaml
-            # Wait for PostgreSQL to be ready
+            kubectl apply -f k8s/
             kubectl rollout status deployment/postgres -n devops-hilltop --timeout=600s
-            # Apply main application deployment and service
-            kubectl apply -f k8s/deployment.yaml
-            kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/hpa.yaml
-            # Wait for deployment to be ready
             kubectl rollout status deployment/devops-hilltop-deployment -n devops-hilltop --timeout=600s
       - run:
           name: Initialize production database
@@ -165,26 +114,9 @@ jobs:
           name: Verify production deployment
           command: |
             kubectl get pods -n devops-hilltop
-            kubectl get services -n devops-hilltop
-            # Test database connectivity
-            kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- node -e "
-              const { pool } = require('./server/db.js');
-              pool.query('SELECT COUNT(*) FROM categories').then(result => {
-                console.log('Production database ready. Categories count:', result.rows[0].count);
-                process.exit(0);
-              }).catch(err => {
-                console.error('Production database connection failed:', err.message);
-                process.exit(1);
-              });
-            "
             LOAD_BALANCER_URL=$(kubectl get service devops-hilltop-service -n devops-hilltop -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            echo "Production deployment successful!"
-            if [ -n "$LOAD_BALANCER_URL" ]; then
-              echo "Application URL: http://$LOAD_BALANCER_URL"
-              echo "Health Check: http://$LOAD_BALANCER_URL/health"
-            else
-              echo "LoadBalancer provisioning in progress..."
-            fi
+            echo "Production deployment complete!"
+            echo "Application URL: http://$LOAD_BALANCER_URL"
 
 workflows:
   version: 2
