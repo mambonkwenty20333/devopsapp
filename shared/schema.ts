@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -18,6 +18,7 @@ export const resources = pgTable("resources", {
   categoryId: integer("category_id").references(() => categories.id).notNull(),
   tags: text("tags").array().default([]),
   imageUrl: text("image_url"),
+  featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
