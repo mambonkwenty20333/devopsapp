@@ -77,7 +77,14 @@ jobs:
             kubectl apply -f k8s/namespace.yaml
             kubectl apply -f k8s/configmap.yaml
             kubectl apply -f k8s/secret.yaml
-            # Apply main deployment and service
+            # Deploy PostgreSQL database first
+            kubectl apply -f k8s/postgres-secret.yaml
+            kubectl apply -f k8s/postgres-pvc.yaml
+            kubectl apply -f k8s/postgres-deployment.yaml
+            kubectl apply -f k8s/postgres-service.yaml
+            # Wait for PostgreSQL to be ready
+            kubectl rollout status deployment/postgres -n devops-hilltop --timeout=300s
+            # Apply main application deployment and service
             kubectl apply -f k8s/deployment.yaml
             kubectl apply -f k8s/service.yaml
             kubectl apply -f k8s/hpa.yaml
