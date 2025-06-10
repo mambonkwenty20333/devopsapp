@@ -118,7 +118,7 @@ export default function Contact() {
                       Contact Number
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Your phone number" {...field} />
+                      <Input placeholder="Your phone number" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,7 +135,7 @@ export default function Contact() {
                       Address
                     </FormLabel>
                     <FormControl>
-                      <Input placeholder="Your address" {...field} />
+                      <Input placeholder="Your address" value={field.value || ""} onChange={field.onChange} onBlur={field.onBlur} name={field.name} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

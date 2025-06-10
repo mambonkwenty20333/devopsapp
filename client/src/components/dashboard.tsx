@@ -268,17 +268,28 @@ export default function Dashboard() {
                       <Badge variant="outline" className="text-xs">
                         ID: {contact.id}
                       </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {contact.subject}
+                      </Badge>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'No date'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {contact.name}
-                      </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        ({contact.email})
-                      </span>
+                    <div className="space-y-1 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {contact.name}
+                        </span>
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          ({contact.email})
+                        </span>
+                      </div>
+                      {(contact.contact || contact.address) && (
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+                          {contact.contact && <span>📞 {contact.contact}</span>}
+                          {contact.address && <span>📍 {contact.address}</span>}
+                        </div>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       {contact.message}
