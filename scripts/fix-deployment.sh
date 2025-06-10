@@ -8,6 +8,7 @@ SHORT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "manual")
 IMAGE_TAG="${SHORT_SHA}-${TIMESTAMP}"
 
 echo "Building and pushing Docker image with tag: $IMAGE_TAG"
+echo "Using production build script to exclude Vite dependencies..."
 docker build -t hilltopconsultancy/devops-hilltop:$IMAGE_TAG .
 docker push hilltopconsultancy/devops-hilltop:$IMAGE_TAG
 

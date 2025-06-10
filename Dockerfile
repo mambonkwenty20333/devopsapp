@@ -13,8 +13,8 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
-# Build the application
-RUN npm run build
+# Build the application with proper exclusions
+RUN chmod +x scripts/build-production.sh && ./scripts/build-production.sh
 
 # Production stage
 FROM node:20-alpine AS production
