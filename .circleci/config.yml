@@ -48,7 +48,10 @@ jobs:
       - run:
           name: Build and push Docker images
           command: |
-            # Build with commit SHA tag
+            # Set permissions for build script
+            chmod +x scripts/build-production.sh
+            
+            # Build with commit SHA tag (uses production build script internally)
             docker build -t hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >> .
             docker push hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>
             
