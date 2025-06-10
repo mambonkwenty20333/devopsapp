@@ -241,6 +241,40 @@ docker-compose down
    - Push to `main` branch → Requires manual approval for production deployment
    - Each deployment uses the git commit SHA as the Docker image tag
 
+## 📊 Monitoring Stack
+
+Deploy comprehensive monitoring with Prometheus and Grafana:
+
+### Quick Monitoring Deployment
+```bash
+# Deploy complete monitoring stack
+./monitoring/deploy-monitoring.sh
+
+# Test monitoring components
+./monitoring/test-monitoring.sh
+```
+
+### Custom Dashboards Included
+- **DevOps Hilltop Application**: Request rates, contact form metrics, database performance
+- **Kubernetes Cluster**: Node utilization, pod status, resource usage
+- **Infrastructure Overview**: LoadBalancer health, storage utilization, service metrics
+
+### Access Monitoring
+```bash
+# Get Grafana URL (admin/admin)
+kubectl get service grafana -n monitoring
+
+# Access Prometheus locally
+kubectl port-forward service/prometheus-server 9090:80 -n monitoring
+```
+
+### Application Metrics
+The application automatically exposes metrics at `/metrics` endpoint:
+- HTTP request rates and response times
+- Contact form submission tracking
+- Database connection metrics
+- System performance indicators
+
 ## 🔄 CI/CD Pipeline
 
 The simplified CircleCI pipeline handles building, testing, and deploying your application to AWS EKS:
