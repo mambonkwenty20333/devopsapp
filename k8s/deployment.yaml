@@ -30,6 +30,7 @@ spec:
       containers:
       - name: devops-hilltop
         image: hilltopconsultancy/devops-hilltop:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
           name: http
