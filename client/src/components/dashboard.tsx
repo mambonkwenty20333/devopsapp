@@ -216,11 +216,7 @@ export default function Dashboard() {
                         <Badge variant="outline" className="text-xs">
                           ID: {resource.id}
                         </Badge>
-                        {resource.featured && (
-                          <Badge className="text-xs bg-yellow-500">
-                            Featured
-                          </Badge>
-                        )}
+  
                       </div>
                       <h4 className="font-medium text-gray-900 dark:text-white">
                         {resource.title}
