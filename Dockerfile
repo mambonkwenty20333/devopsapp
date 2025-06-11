@@ -14,7 +14,14 @@ RUN npm ci && npm cache clean --force
 COPY . .
 
 # Build the application with proper exclusions
-RUN chmod +x scripts/build-production.sh && ./scripts/build-production.sh
+RUN npm run build
+RUN npx esbuild server/production-entry.ts \
+  --platform=node \
+  --packages=external \
+  --bundle \
+  --format=esm \
+  --outfile=dist/server.js \
+  --define:process.env.NODE_ENV=\"production\"
 
 # Production stage
 FROM node:20-alpine AS production
