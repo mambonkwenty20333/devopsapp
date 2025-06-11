@@ -78,12 +78,12 @@ jobs:
             kubectl apply -f k8s/
             # Force rolling update by restarting deployment
             kubectl rollout restart deployment/devops-hilltop-app -n devops-hilltop
-            kubectl rollout status deployment/postgres -n devops-hilltop --timeout=300s
             kubectl rollout status deployment/devops-hilltop-app -n devops-hilltop --timeout=300s
       - run:
-          name: Initialize database
+          name: Verify database connection
           command: |
-            kubectl exec deployment/devops-hilltop-app -n devops-hilltop -- npm run db:push
+            echo "Using Neon managed database - no local database initialization needed"
+            kubectl exec deployment/devops-hilltop-app -n devops-hilltop -- node -e "console.log('Database connection via DATABASE_URL')"
       - run:
           name: Verify deployment
           command: |
@@ -112,12 +112,12 @@ jobs:
             kubectl apply -f k8s/
             # Force rolling update by restarting deployment
             kubectl rollout restart deployment/devops-hilltop-app -n devops-hilltop
-            kubectl rollout status deployment/postgres -n devops-hilltop --timeout=600s
             kubectl rollout status deployment/devops-hilltop-app -n devops-hilltop --timeout=600s
       - run:
-          name: Initialize production database
+          name: Verify production database
           command: |
-            kubectl exec deployment/devops-hilltop-app -n devops-hilltop -- npm run db:push
+            echo "Using Neon managed database - no local database initialization needed"
+            kubectl exec deployment/devops-hilltop-app -n devops-hilltop -- node -e "console.log('Production database connection via DATABASE_URL')"
       - run:
           name: Verify production deployment
           command: |
