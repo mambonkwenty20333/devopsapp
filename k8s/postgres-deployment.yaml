@@ -15,9 +15,14 @@ spec:
       labels:
         app: postgres
     spec:
+      securityContext:
+        fsGroup: 999
       containers:
       - name: postgres
         image: postgres:15-alpine
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
         env:
         - name: POSTGRES_DB
           value: devops_hilltop
