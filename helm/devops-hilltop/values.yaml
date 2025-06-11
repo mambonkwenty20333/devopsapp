@@ -70,6 +70,10 @@ postgresql:
     persistence:
       enabled: true
       size: 8Gi
+      subPath: "pgdata"
+    extraEnvVars:
+      - name: PGDATA
+        value: /var/lib/postgresql/data/pgdata
 
 env:
   NODE_ENV: "production"

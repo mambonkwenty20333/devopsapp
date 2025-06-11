@@ -22,11 +22,11 @@ docker push hilltopconsultancy/devops-hilltop:latest
 # Clean up existing resources
 echo "Cleaning up existing resources..."
 kubectl delete deployment devops-hilltop-app -n devops-hilltop --ignore-not-found=true
+kubectl delete deployment postgres -n devops-hilltop --ignore-not-found=true
 kubectl delete pvc postgres-pvc -n devops-hilltop --ignore-not-found=true
-kubectl delete pod -l app=postgres -n devops-hilltop --ignore-not-found=true
 
 # Wait for cleanup
-sleep 10
+sleep 15
 
 # Apply Kubernetes manifests in correct order
 echo "Deploying to Kubernetes..."
