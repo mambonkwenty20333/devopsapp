@@ -197,6 +197,7 @@ eksctl create iamserviceaccount \
 
 ```bash
 kubectl describe serviceaccount ebs-csi-controller-sa -n kube-system
+kubectl rollout restart deployment ebs-csi-controller -n kube-system
 ```
 
 Check for this annotation:
@@ -206,14 +207,6 @@ Annotations: eks.amazonaws.com/role-arn: arn:aws:iam::050451396180:role/eksctl-e
 ```
 
 ---
-2. **Configure AWS credentials**
-   ```bash
-   aws configure
-   # Enter your AWS Access Key ID
-   # Enter your AWS Secret Access Key
-   # Enter your default region (e.g., us-west-2)
-   # Enter output format (json)
-   ```
 
 3. **Create EKS cluster**
    ```bash
