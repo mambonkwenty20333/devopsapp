@@ -65,11 +65,9 @@ kubectl apply -f k8s/secrets.yaml
 
 ### Method 3: Create Secret from Command Line
 ```bash
-# Create new secret with literal values
+# Create new secret with Neon DATABASE_URL only
 kubectl create secret generic devops-hilltop-secret \
-  --from-literal=DATABASE_URL="postgresql://user:pass@host:5432/db" \
-  --from-literal=PGUSER="username" \
-  --from-literal=PGPASSWORD="password" \
+  --from-literal=DATABASE_URL="postgresql://neondb_owner:your_password@ep-tight-night-ad7thfl1.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require" \
   --namespace=devops-hilltop
 ```
 
@@ -132,14 +130,14 @@ data:
 kubectl get secret devops-hilltop-secret -n devops-hilltop
 
 # View pod environment variables
-kubectl exec deployment/devops-hilltop-deployment -n devops-hilltop -- env | grep PG
+kubectl exec deployment/devops-hilltop-app -n devops-hilltop -- env | grep DATABASE
 
 # Check pod logs for connection errors
-kubectl logs deployment/devops-hilltop-deployment -n devops-hilltop --tail=50
+kubectl logs deployment/devops-hilltop-app -n devops-hilltop --tail=50
 
 # Test database connection from pod
-kubectl exec -it deployment/devops-hilltop-deployment -n devops-hilltop -- sh
-# Inside pod: psql $DATABASE_URL -c "SELECT version();"
+kubectl exec -it deployment/devops-hilltop-app -n devops-hilltop -- sh
+# Inside pod: node -e "console.log(process.env.DATABASE_URL)"
 ```
 
 ## External Secret Management
@@ -176,7 +174,7 @@ spec:
 
 ## Deployment Integration
 
-The deployment automatically references secrets:
+The deployment now uses only the DATABASE_URL secret:
 
 ```yaml
 env:
@@ -185,11 +183,23 @@ env:
     secretKeyRef:
       name: devops-hilltop-secret
       key: DATABASE_URL
-- name: PGUSER
-  valueFrom:
-    secretKeyRef:
-      name: devops-hilltop-secret
-      key: PGUSER
 ```
 
-This ensures sensitive data is not hardcoded in deployment manifests and can be managed separately from application code.
+## What Changed
+
+### Removed Files
+- `postgres-deployment.yaml` - No longer needed (using Neon instead)
+- `postgres-service.yaml` - No longer needed 
+- `postgres-secret.yaml` - No longer needed
+- `postgres-pvc.yaml` - No longer needed
+
+### Updated Files
+- `deployment.yaml` - Now only uses DATABASE_URL environment variable
+- `secret.yaml` - Updated to contain Neon DATABASE_URL instead of local PostgreSQL credentials
+
+### Benefits of Neon Integration
+- No PostgreSQL pod management required
+- Automatic backups and scaling handled by Neon
+- SSL encryption built-in
+- Reduced Kubernetes resource usage
+- Simplified deployment configuration

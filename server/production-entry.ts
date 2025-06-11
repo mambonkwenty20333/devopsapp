@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerRoutes } from "./routes.js";
 import { metricsMiddleware } from "./metrics.js";
+import { initializeDatabase } from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,17 +51,20 @@ async function createApp() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = parseInt(process.env.PORT || "5000");
   
-  createApp()
-    .then(({ app, httpServer }) => {
-      httpServer.listen(port, "0.0.0.0", () => {
-        log(`Server running on port ${port}`);
-        log(`Health check: http://0.0.0.0:${port}/api/health`);
-      });
-    })
-    .catch((error) => {
-      console.error("Failed to start server:", error);
-      process.exit(1);
+  (async () => {
+    // Initialize database first
+    await initializeDatabase();
+    
+    const { app, httpServer } = await createApp();
+    
+    httpServer.listen(port, "0.0.0.0", () => {
+      log(`Server running on port ${port}`);
+      log(`Health check: http://0.0.0.0:${port}/api/health`);
     });
+  })().catch((error) => {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  });
 }
 
 export { createApp };
