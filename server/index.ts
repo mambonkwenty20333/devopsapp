@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { metricsMiddleware, register } from "./metrics";
+import { initializeDatabase } from "./db";
 
 function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -87,6 +88,9 @@ export async function createApp() {
 // Only run the server if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   (async () => {
+    // Initialize database first
+    await initializeDatabase();
+    
     const app = await createApp();
     
     // ALWAYS serve the app on port 5000
@@ -100,6 +104,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       reusePort: true,
     }, () => {
       log(`serving on port ${port}`);
+      log(`Health check: http://0.0.0.0:${port}/api/health`);
     });
   })();
 }
