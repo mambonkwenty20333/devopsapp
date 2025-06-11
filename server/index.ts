@@ -88,12 +88,12 @@ export async function createApp() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   (async () => {
     const app = await createApp();
-    const server = await registerRoutes(app);
-
+    
     // ALWAYS serve the app on port 5000
     // this serves both the API and the client.
     // It is the only port that is not firewalled.
     const port = 5000;
+    const server = await registerRoutes(app);
     server.listen({
       port,
       host: "0.0.0.0",

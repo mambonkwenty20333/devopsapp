@@ -6,12 +6,20 @@ import { z } from "zod";
 import { recordContactFormSubmission, recordDatabaseQuery, recordDatabaseError } from "./metrics";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint
+  // Health check endpoints
   app.get("/health", (req, res) => {
     res.status(200).json({ 
       status: "healthy", 
       timestamp: new Date().toISOString(),
       service: "DevOps with Hilltop"
+    });
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      service: "DevOps with Hilltop API"
     });
   });
 
@@ -191,6 +199,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(contacts);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch contacts" });
+    }
+  });
+
+  // Catch-all route for undefined API endpoints
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ 
+      error: "API endpoint not found",
+      path: req.path,
+      method: req.method,
+      message: `The endpoint ${req.method} ${req.path} is not available`
+    });
+  });
+
+  // General error handler for API routes
+  app.use((err: any, req: any, res: any, next: any) => {
+    if (req.path.startsWith('/api')) {
+      console.error('API Error:', err);
+      res.status(500).json({ 
+        error: "Internal server error",
+        message: err.message || "Something went wrong"
+      });
+    } else {
+      next(err);
     }
   });
 
