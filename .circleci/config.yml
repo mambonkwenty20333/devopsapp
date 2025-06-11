@@ -21,10 +21,9 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run:
-          name: Set script permissions and run tests
+          name: Run tests
           command: |
             chmod +x test.sh
-            chmod +x scripts/*.sh
             mkdir -p test-results
             ./test.sh
       - run:
