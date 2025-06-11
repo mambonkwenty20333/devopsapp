@@ -13,15 +13,8 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
-# Build the application with proper exclusions
+# Build the application 
 RUN npm run build
-RUN npx esbuild server/production-entry.ts \
-  --platform=node \
-  --packages=external \
-  --bundle \
-  --format=esm \
-  --outfile=dist/server.js \
-  --define:process.env.NODE_ENV=\"production\"
 
 # Production stage
 FROM node:20-alpine AS production
@@ -65,4 +58,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/index.js"]
