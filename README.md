@@ -155,15 +155,58 @@ docker-compose down
    chmod +x kubectl
    sudo mv kubectl /usr/local/bin/
    ```
+---
 
-2. **Configure AWS credentials**
-   ```bash
-   aws configure
-   # Enter your AWS Access Key ID
-   # Enter your AWS Secret Access Key
-   # Enter your default region (e.g., us-west-2)
-   # Enter output format (json)
-   ```
+### Step 2: Associate IAM OIDC Provider and Create IAM Role for EBS CSI Driver
+
+#### 2.1: Associate the OIDC Provider with Your Cluster
+
+```bash
+eksctl utils associate-iam-oidc-provider \
+  --cluster eks-systems \
+  --region eu-central-1 \
+  --approve
+```
+
+#### 2.2: Verify the OIDC Provider
+
+```bash
+aws eks describe-cluster --name eks-systems --query "cluster.identity.oidc.issuer" --output text
+```
+
+You should see a URL like:
+
+```
+https://oidc.eks.eu-central-1.amazonaws.com/id/<OIDC_ID>
+```
+
+#### 2.3: Create IAM Service Account and Attach Policy
+
+```bash
+eksctl create iamserviceaccount \
+  --cluster=eks-systems \
+  --namespace=kube-system \
+  --name=ebs-csi-controller-sa \
+  --attach-policy-arn=arn:aws:iam::050451396180:policy/AmazonEKS_EBS_CSI_Driver_Policy_eks-systems \
+  --approve \
+  --override-existing-serviceaccounts \
+  --region=eu-central-1
+```
+
+#### 2.4: Verify the Service Account
+
+```bash
+kubectl describe serviceaccount ebs-csi-controller-sa -n kube-system
+kubectl rollout restart deployment ebs-csi-controller -n kube-system
+```
+
+Check for this annotation:
+
+```
+Annotations: eks.amazonaws.com/role-arn: arn:aws:iam::050451396180:role/eksctl-eks-systems-addon-iamserviceaccount-kube-s-Role1-XXXXXX
+```
+
+---
 
 3. **Create EKS cluster**
    ```bash
