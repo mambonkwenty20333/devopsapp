@@ -48,31 +48,6 @@ spec:
             secretKeyRef:
               name: devops-hilltop-secret
               key: DATABASE_URL
-        - name: PGUSER
-          valueFrom:
-            secretKeyRef:
-              name: devops-hilltop-secret
-              key: PGUSER
-        - name: PGPASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: devops-hilltop-secret
-              key: PGPASSWORD
-        - name: PGHOST
-          valueFrom:
-            secretKeyRef:
-              name: devops-hilltop-secret
-              key: PGHOST
-        - name: PGPORT
-          valueFrom:
-            secretKeyRef:
-              name: devops-hilltop-secret
-              key: PGPORT
-        - name: PGDATABASE
-          valueFrom:
-            secretKeyRef:
-              name: devops-hilltop-secret
-              key: PGDATABASE
         resources:
           requests:
             memory: "256Mi"

@@ -1,15 +1,14 @@
 # Kubernetes Secrets Management Guide
 
-## Your Current Secrets
+## Current Configuration
 
-The DevOps Hilltop application uses these actual database credentials from your Replit environment:
+The DevOps Hilltop application now uses Neon (managed PostgreSQL) instead of self-hosted PostgreSQL.
 
-### Database Connection Details
-- **Host**: ep-tight-night-ad7thfl1.c-2.us-east-1.aws.neon.tech
-- **User**: neondb_owner
-- **Database**: neondb
-- **Port**: 5432
-- **Connection**: SSL required (Neon database)
+### Database Setup
+- **Provider**: Neon (managed PostgreSQL service)
+- **Connection**: Single DATABASE_URL environment variable
+- **SSL**: Required for Neon connections
+- **No separate PostgreSQL pods**: Removed postgres-deployment.yaml, postgres-service.yaml, etc.
 
 ## How Kubernetes Secrets Work
 
@@ -29,10 +28,10 @@ kubectl get secret devops-hilltop-secret -n devops-hilltop -o jsonpath='{.data.D
 
 ### Decoding Secret Values
 ```bash
-# Decode DATABASE_URL
-echo "cG9zdGdyZXNxbDovL25lb25kYl9vd25lcjpucGdfWW9Gc1gwdGdOczh1c0JxeVoyNnVuenNMS0pKWkBlcC10aWdodC1uaWdodC1hZDd0aGZsMS5jLTIudXMtZWFzdC0xLmF3cy5uZW9uLnRlY2g6NTQzMi9uZW9uZGI/c3NsbW9kZT1yZXF1aXJl" | base64 -d
+# Decode DATABASE_URL (current Neon connection)
+kubectl get secret devops-hilltop-secret -n devops-hilltop -o jsonpath='{.data.DATABASE_URL}' | base64 -d
 
-# Result: postgresql://neondb_owner:npg_YoFsX0tgNs8usBqyZ26unzsLKJJZ@ep-tight-night-ad7thfl1.c-2.us-east-1.aws.neon.tech:5432/neondb?sslmode=require
+# Shows: postgresql://neondb_owner:npg_jrk2GdwbV5Ay@ep-tight-night-ad7thfl1.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
 ```
 
 ### Encoding New Values
