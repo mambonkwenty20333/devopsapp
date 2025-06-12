@@ -48,8 +48,13 @@ jobs:
           name: Build and push Docker images
           command: |
             # Build with commit SHA tag (uses direct build commands)
-            docker build -t hilltopconsultancy/devops-hilltop:latest .
+            docker build -t hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >> .
+            docker push hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>
+            
+            # Tag and push as latest
+            docker tag hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >> hilltopconsultancy/devops-hilltop:latest
             docker push hilltopconsultancy/devops-hilltop:latest
+          no_output_timeout: 20m
 
   deploy-staging:
     executor: aws-executor
@@ -63,6 +68,10 @@ jobs:
           name: Configure kubectl for EKS
           command: |
             aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
+      - run:
+          name: Update Kubernetes manifests with image tag
+          command: |
+            sed -i "s|image: hilltopconsultancy/devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS staging
           command: |
@@ -92,6 +101,11 @@ jobs:
           name: Configure kubectl for EKS
           command: |
             aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name $EKS_CLUSTER_NAME
+      - run:
+          name: Update Kubernetes manifests for production
+          command: |
+            sed -i "s|image: hilltopconsultancy/devops-hilltop:latest|image: hilltopconsultancy/devops-hilltop:<< pipeline.git.revision >>|g" k8s/deployment.yaml
+            sed -i "s|replicas: 3|replicas: 5|g" k8s/deployment.yaml
       - run:
           name: Deploy to EKS production
           command: |
